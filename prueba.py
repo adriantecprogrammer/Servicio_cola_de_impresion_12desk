@@ -1,5 +1,12 @@
 import asyncio
 from retoolrpc import RetoolRPC, RetoolRPCConfig
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import A6
+from reportlab.lib.units import mm
+import qrcode
+from io import BytesIO
+import webbrowser
 
 async def start_rpc():
   rpc_config = RetoolRPCConfig(
@@ -13,60 +20,92 @@ async def start_rpc():
 
   rpc = RetoolRPC(rpc_config)
 
-  def helloWorld(args, context):
-      return f"id de la orden: {args['name']}"
+  def imprimirTicket(args, context):
+    nombre="Adrian"
+    cantidad="1" 
+    monto="50" 
+    direccion="Avmadero" 
+    telefono="4432391799"
+    id_pedido="1234"
+    
+     # Crear un nuevo archivo PDF con tamaño de ticket (A6)
+    c = canvas.Canvas("ticket.pdf", pagesize=A6)
+
+    # Establecer el tamaño de fuente y el color
+    c.setFont("Helvetica-Bold", 12)
+    c.setFillColorRGB(0, 0, 0)
+
+    # Dibujar el encabezado del ticket
+    c.drawString(5*mm, 140*mm, "--- TICKET DE COMPRA ---")
+
+    # Dibujar los detalles del ticket
+    c.setFont("Helvetica", 10)
+    c.drawString(5*mm, 130*mm, f"Nombre: {nombre}")
+    c.drawString(5*mm, 125*mm, f"Cantidad: {cantidad}")
+    c.drawString(5*mm, 120*mm, f"Monto: ${float(monto):.2f}")
+    c.drawString(5*mm, 115*mm, f"Dirección: {direccion}")
+    c.drawString(5*mm, 110*mm, f"Teléfono: {telefono}")
+    c.drawString(5*mm, 105*mm, f"ID Pedido: {id_pedido}")
+
+    # Generar el código QR con el ID del pedido
+    qr = qrcode.QRCode(version=None, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=2, border=1)
+    qr.add_data("Id del pedido: "+ id_pedido)
+    qr.make(fit=True)
+    qr_image = qr.make_image(fill_color="black", back_color="white")
+
+    # Convertir la imagen del código QR a un objeto compatible con ReportLab
+    qr_io = BytesIO()
+    qr_image.save(qr_io, format='PNG')
+    qr_io.seek(0)
+    qr_reportlab = canvas.ImageReader(qr_io)
+
+    # Dibujar el código QR en el ticket
+    c.drawImage(qr_reportlab, 60*mm, 105*mm, width=30*mm, height=30*mm)
+
+    # Dibujar línea separadora
+    c.setLineWidth(0.5)
+    c.line(5*mm, 100*mm, 95*mm, 100*mm)
+
+    # Dibujar mensaje de agradecimiento
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(5*mm, 95*mm, "¡Gracias por su compra!")
+
+    # Guardar el archivo PDF
+    c.showPage()
+    c.save()
+    
+    webbrowser.open("ticket.pdf")
+    
+    print (args)
+      
 
   rpc.register(
       {
-          "name": "helloWorld",
+          "name": "imprimirTicket",
           "arguments": {
-              "name": {
+              "id": {
+                  "type": "string",
+                  "description": "Your name",
+                  "required": True,
+                  "array": False,
+              },
+              
+              "domicilio":{
                   "type": "string",
                   "description": "Your name",
                   "required": True,
                   "array": False,
               },
           },
-          "implementation": generar_ticket,
+          "implementation": imprimirTicket,
           "permissions": None,
       }
   )
-
+  
   await rpc.listen()
 
 if __name__ == "__main__":
-  asyncio.run(start_rpc())
-
-
-def generar_ticket(nombre, cantidad, monto, direccion, telefono):
-    # Crear un nuevo archivo PDF
-    c = canvas.Canvas("ticket.pdf", pagesize=letter)
-
-    # Establecer el tamaño de fuente y el color
-    c.setFont("Helvetica-Bold", 16)
-    c.setFillColorRGB(0, 0, 0)
-
-    # Dibujar el encabezado del ticket
-    c.drawString(50, 700, "--- TICKET DE COMPRA ---")
-
-    # Dibujar los detalles del ticket
-    c.setFont("Helvetica", 12)
-    c.drawString(50, 650, f"Nombre del cliente: {nombre}")
-    c.drawString(50, 625, f"Cantidad: {cantidad}")
-    c.drawString(50, 600, f"Monto final: ${monto:.2f}")
-    c.drawString(50, 575, f"Dirección: {direccion}")
-    c.drawString(50, 550, f"Teléfono: {telefono}")
-
-    # Guardar el archivo PDF
-    c.showPage()
-    c.save()
-
-# Ejemplo de uso
-nombre_cliente = "Juan Pérez"
-cantidad_productos = 5
-monto_final = 150.75
-direccion_cliente = "Calle Principal 123"
-telefono_cliente = "555-1234"
-
-generar_ticket(nombre_cliente, cantidad_productos, monto_final, direccion_cliente, telefono_cliente)
-    
+    try:
+        asyncio.run(start_rpc())
+    except Exception as e:
+        print(f"Error: {str(e)}")
