@@ -1,4 +1,4 @@
-
+from email._header_value_parser import ContentTransferEncoding
 from tkinter import *
 
 ventana = Tk()
@@ -22,7 +22,7 @@ canvas.configure(yscrollcommand=scrollbar.set, xscrollcommand=scrollbar.set)
 
 # Se crea un marco y lo ponemos dentro del canvas
 marco_lista = Frame(canvas)
-canvas.create_window((1, 1), window=marco_lista, anchor=NW)
+canvas.create_window((0, 0), window=marco_lista, anchor=NW)
 
 # Estos nomas son de prueba
 elementos = [
@@ -45,7 +45,7 @@ def imprimir(titulo):
 for i, elemento in enumerate(elementos):
     # Crear un marco para cada elemento
     marco_elemento = Frame(marco_lista, bd=1, relief=SOLID)
-    marco_elemento.grid(row=i, column=0, padx=20, pady=10, sticky=W+E)
+    marco_elemento.grid(row=i, column=0, padx=30, pady=10, sticky=W+E)
 
     # Label para el título
     label_titulo = Label(marco_elemento, text=elemento["titulo"], font=("Arial", 12, "bold"))
@@ -55,10 +55,12 @@ for i, elemento in enumerate(elementos):
     label_descripcion = Label(marco_elemento, text=elemento["descripcion"], font=("Arial", 10))
     label_descripcion.grid(row=1, column=0, padx=10, pady=10, sticky=W)
 
-    # Botón "Imprimir" para cada elemento
+    # Botón para cada elemento
     boton_imprimir = Button(marco_elemento, text="Imprimir", command=lambda titulo=elemento["titulo"]: imprimir(titulo))
     boton_imprimir.grid(row=0, column=1, rowspan=2, padx=10, pady=10)
     boton_imprimir.config(bg="black", fg="white")
+
+
 
 # Configurar el tamaño del canvas y hacer que el marco_lista se ajuste al tamaño del canvas
 marco_lista.update_idletasks()
