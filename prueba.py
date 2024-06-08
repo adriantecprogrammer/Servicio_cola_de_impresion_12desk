@@ -8,6 +8,7 @@ import qrcode
 from io import BytesIO
 import webbrowser
 
+
 async def start_rpc():
   rpc_config = RetoolRPCConfig(
       api_token="retool_01hz971zbvyz71dtpzzdjwmn1d",
@@ -19,16 +20,28 @@ async def start_rpc():
   )
 
   rpc = RetoolRPC(rpc_config)
-
-  def imprimirTicket(args, context):
-    nombre="Adrian"
-    cantidad="1" 
-    monto="50" 
-    direccion="Avmadero" 
-    telefono="4432391799"
-    id_pedido="1234"
+  
+  
+  def obtenerDatos(args, context):
+      
+    try:
+      id_pedido = args.get('id')
+      direccion = args.get('domicilio')
+      monto=args.get('monto')
+      cliente=args.get('cliente')
+      cantidad=args.get('cantidad')
+      telefono=args.get('telefono')
+      
+      imprimirTicket(id_pedido,direccion,monto,cliente,cantidad, telefono)
+      
+    except Exception as e:
+        print ("Error al obtener datos") 
     
-     # Crear un nuevo archivo PDF con tamaño de ticket (A6)
+
+  def imprimirTicket(id_pedido, direccion, monto, cliente, cantidad, telefono):
+      
+    
+   # Crear un nuevo archivo PDF con tamaño de ticket (A6)
     c = canvas.Canvas("ticket.pdf", pagesize=A6)
 
     # Establecer el tamaño de fuente y el color
@@ -40,7 +53,7 @@ async def start_rpc():
 
     # Dibujar los detalles del ticket
     c.setFont("Helvetica", 10)
-    c.drawString(5*mm, 130*mm, f"Nombre: {nombre}")
+    c.drawString(5*mm, 130*mm, f"Nombre: {cliente}")
     c.drawString(5*mm, 125*mm, f"Cantidad: {cantidad}")
     c.drawString(5*mm, 120*mm, f"Monto: ${float(monto):.2f}")
     c.drawString(5*mm, 115*mm, f"Dirección: {direccion}")
@@ -60,7 +73,7 @@ async def start_rpc():
     qr_reportlab = canvas.ImageReader(qr_io)
 
     # Dibujar el código QR en el ticket
-    c.drawImage(qr_reportlab, 60*mm, 105*mm, width=30*mm, height=30*mm)
+    c.drawImage(qr_reportlab, 65*mm, 105*mm, width=30*mm, height=30*mm)
 
     # Dibujar línea separadora
     c.setLineWidth(0.5)
@@ -76,9 +89,7 @@ async def start_rpc():
     
     webbrowser.open("ticket.pdf")
     
-    print (args)
-      
-
+    
   rpc.register(
       {
           "name": "imprimirTicket",
@@ -96,8 +107,32 @@ async def start_rpc():
                   "required": True,
                   "array": False,
               },
+              "cantidad":{
+                  "type": "string",
+                  "description": "Your name",
+                  "required": True,
+                  "array": False,
+              },
+              "cliente":{
+                  "type": "string",
+                  "description": "Your name",
+                  "required": True,
+                  "array": False,
+              },
+              "monto":{
+                  "type": "string",
+                  "description": "Your name",
+                  "required": True,
+                  "array": False,
+              },
+              "telefono":{
+                  "type": "string",
+                  "description": "Your name",
+                  "required": True,
+                  "array": False,
+              },
           },
-          "implementation": imprimirTicket,
+          "implementation": obtenerDatos,
           "permissions": None,
       }
   )
