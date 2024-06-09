@@ -26,21 +26,21 @@ async def start_rpc():
       
     try:
       id_pedido = args.get('id')
-      direccion = args.get('domicilio')
+      cliente = args.get('cliente')
+      calle=args.get('calle')
+      colonia=args.get('colonia')
       monto=args.get('monto')
-      cliente=args.get('cliente')
-      cantidad=args.get('cantidad')
-      telefono=args.get('telefono')
-      
-      imprimirTicket(id_pedido,direccion,monto,cliente,cantidad, telefono)
+      status=args.get('status')
+      telefono=args.get('contacto')
+      fecha=args.get('fecha')
+      imprimirTicket(id_pedido,calle,colonia,monto,cliente, status,telefono,fecha)
       
     except Exception as e:
         print ("Error al obtener datos") 
     
 
-  def imprimirTicket(id_pedido, direccion, monto, cliente, cantidad, telefono):
+  def imprimirTicket(id_pedido,calle,colonia,monto,cliente, status,telefono,fecha):
       
-    
    # Crear un nuevo archivo PDF con tamaño de ticket (A6)
     c = canvas.Canvas("ticket.pdf", pagesize=A6)
 
@@ -53,12 +53,15 @@ async def start_rpc():
 
     # Dibujar los detalles del ticket
     c.setFont("Helvetica", 10)
-    c.drawString(5*mm, 130*mm, f"Nombre: {cliente}")
-    c.drawString(5*mm, 125*mm, f"Cantidad: {cantidad}")
-    c.drawString(5*mm, 120*mm, f"Monto: ${float(monto):.2f}")
-    c.drawString(5*mm, 115*mm, f"Dirección: {direccion}")
+    c.drawString(5*mm, 130*mm, f"ID Pedido: {id_pedido}")
+    c.drawString(5*mm, 125*mm, f"Nombre: {cliente}")
+    c.drawString(5*mm, 105*mm, f"Monto: ${float(monto):.2f}")
+    c.drawString(5*mm, 120*mm, f"Calle: {calle}")
+    c.drawString(5*mm, 115*mm, f"Colonia: {colonia}")
     c.drawString(5*mm, 110*mm, f"Teléfono: {telefono}")
-    c.drawString(5*mm, 105*mm, f"ID Pedido: {id_pedido}")
+    #c.drawString(5*mm, 105*mm, f"Status: {status}")
+    #c.drawString(5*mm, 100*mm, f"Fecha: {fecha}")
+
 
     # Generar el código QR con el ID del pedido
     qr = qrcode.QRCode(version=None, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=2, border=1)
@@ -96,41 +99,53 @@ async def start_rpc():
           "arguments": {
               "id": {
                   "type": "string",
-                  "description": "Your name",
+                  "description": "Id Pedido",
                   "required": True,
                   "array": False,
               },
               
-              "domicilio":{
+              "calle":{
                   "type": "string",
-                  "description": "Your name",
+                  "description": "Calle",
                   "required": True,
                   "array": False,
               },
-              "cantidad":{
+              "colonia":{
                   "type": "string",
-                  "description": "Your name",
+                  "description": "Colonia",
                   "required": True,
                   "array": False,
               },
               "cliente":{
                   "type": "string",
-                  "description": "Your name",
+                  "description": "Cliente",
                   "required": True,
                   "array": False,
               },
               "monto":{
                   "type": "string",
-                  "description": "Your name",
+                  "description": "Monto",
                   "required": True,
                   "array": False,
               },
-              "telefono":{
+              "status":{
                   "type": "string",
-                  "description": "Your name",
+                  "description": "Statusg",
                   "required": True,
                   "array": False,
               },
+              "contacto":{
+                  "type": "string",
+                  "description": "Telefono",
+                  "required": True,
+                  "array": False,
+              },
+              "fecha":{
+                  "type": "string",
+                  "description": "Fecha",
+                  "required": True,
+                  "array": False,
+              }
           },
           "implementation": obtenerDatos,
           "permissions": None,
