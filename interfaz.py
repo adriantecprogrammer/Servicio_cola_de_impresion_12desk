@@ -10,24 +10,9 @@ from TicketGenerator import TicketGenerator
 
 # Aqui cargamos los datos del .env
 load_dotenv()
+data = []
 
-# Establecer la conexión a la base de datos
-db = mysql.connector.connect(
-    host=os.getenv("DB_HOST"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    database=os.getenv("DB_NAME"),
-    port=int(os.getenv("DB_PORT"))
-)
 
-# Aqui hacemos la consulta y almacenamos el resultado en una variable, se guardan en tuplas
-cursor = db.cursor()
-cursor.execute("SELECT o.*, d.* FROM Orders o JOIN Direcciones d ON o.address_id = d.iddireccion;")
-resultados = cursor.fetchall()
-
-# Cerrar la conexión
-cursor.close()
-db.close()
 
 def process_row(row):
     # Acceder a los elementos de la tupla por índice
@@ -79,13 +64,35 @@ def process_row(row):
 
     return row_data
 
-# Aqui se almacena la informacion que se transformo de duplas a array
-data = []
-for row in resultados:
+def obtenerRegistros():
+# Establecer la conexión a la base de datos
+ db = mysql.connector.connect(
+    host=os.getenv("DB_HOST"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    database=os.getenv("DB_NAME"),
+    port=int(os.getenv("DB_PORT"))
+ )
+
+ # Aqui hacemos la consulta y almacenamos el resultado en una variable, se guardan en tuplas
+ cursor = db.cursor()
+ cursor.execute("SELECT o.*, d.* FROM Orders o JOIN Direcciones d ON o.address_id = d.iddireccion;")
+ resultados = cursor.fetchall()
+
+ # Cerrar la conexión
+ cursor.close()
+ db.close()
+ 
+ 
+
+ # Aqui se almacena la informacion que se transformo de duplas a array
+ data.clear()
+ for row in resultados:
     row_data = process_row(row)
     data.append(row_data)
 
- 
+
+
 ventana = Tk()
 ventana.geometry("700x400")
 ventana.title("12Desk")
@@ -125,6 +132,10 @@ def imprimir(datos):
         print(f"Error: {str(e)}")
     
 def actualizar_labels():
+    
+    obtenerRegistros()
+   
+    
     for widget in marco_lista.winfo_children():
         widget.destroy()
 
@@ -139,10 +150,14 @@ def actualizar_labels():
         # Label para el título
         label_titulo = Label(marco_elemento, text="ID: " + str(elemento["id"]), font=("Arial", 12, "bold"), width=ancho_fijo, anchor=W)
         label_titulo.grid(row=0, column=0, padx=10, pady=10, sticky=W)
+        
+         # Label para el título
+        label_titulo = Label(marco_elemento, text="Cliente: " + str(elemento["nombre"]), font=("Arial", 12, "bold"), width=ancho_fijo, anchor=W)
+        label_titulo.grid(row=1, column=0, padx=10, pady=10, sticky=W)
 
         # Label para la descripción
         label_descripcion = Label(marco_elemento, text=elemento["descripcion"], font=("Arial", 10), width=ancho_fijo, anchor=W)
-        label_descripcion.grid(row=1, column=0, padx=10, pady=10, sticky=W)
+        label_descripcion.grid(row=2, column=0, padx=10, pady=10, sticky=W)
 
         # Botón para cada elemento
         boton_imprimir = Button(marco_elemento, text="Imprimir", command=lambda datos=elemento: imprimir(datos))
@@ -154,7 +169,7 @@ def actualizar_labels():
     canvas.config(scrollregion=canvas.bbox("all"))
 
 # Crear el botón de Refresh en la parte superior derecha
-boton_refresh = Button(ventana, text="Refresh", command=actualizar_labels)
+boton_refresh = Button(ventana, text="Recargar", command=actualizar_labels)
 boton_refresh.pack(side=TOP, anchor=NE, padx=10, pady=10)
 
 # Llamar a la función para inicializar los labels
