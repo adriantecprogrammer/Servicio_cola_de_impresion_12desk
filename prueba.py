@@ -7,7 +7,6 @@ from reportlab.lib.units import mm
 import qrcode
 from io import BytesIO
 import webbrowser
-from TicketGenerator import TicketGenerator
 
 
 async def start_rpc():
@@ -27,33 +26,68 @@ async def start_rpc():
       
     try:
       id_pedido = args.get('id')
-      cliente = args.get('cliente')
-      calle=args.get('calle')
-      colonia=args.get('colonia')
+      direccion = args.get('domicilio')
       monto=args.get('monto')
-      status=args.get('status')
-      telefono=args.get('contacto')
-      fecha=args.get('fecha')
-      imprimirTicket(id_pedido,calle,colonia,monto,cliente, status,telefono,fecha)
+      cliente=args.get('cliente')
+      cantidad=args.get('cantidad')
+      telefono=args.get('telefono')
+      
+      imprimirTicket(id_pedido,direccion,monto,cliente,cantidad, telefono)
       
     except Exception as e:
         print ("Error al obtener datos") 
     
 
-  def imprimirTicket(id_pedido,calle,colonia,monto,cliente, status,telefono,fecha):
+  def imprimirTicket(id_pedido, direccion, monto, cliente, cantidad, telefono):
       
-    try:
-        
-     print(f"Imprimiendo {id_pedido}...")
-     ticket_generator = TicketGenerator(
-     id_pedido = id_pedido,
-     cliente= cliente,
-     monto=monto,
-     direccion=calle+", "+colonia,
-     )
-     ticket_generator.generar_ticket("ticket.pdf")
-    except Exception as e:
-        print(f"Error: {str(e)}")
+    
+   # Crear un nuevo archivo PDF con tamaño de ticket (A6)
+    c = canvas.Canvas("ticket.pdf", pagesize=A6)
+
+    # Establecer el tamaño de fuente y el color
+    c.setFont("Helvetica-Bold", 12)
+    c.setFillColorRGB(0, 0, 0)
+
+    # Dibujar el encabezado del ticket
+    c.drawString(5*mm, 140*mm, "--- TICKET DE COMPRA ---")
+
+    # Dibujar los detalles del ticket
+    c.setFont("Helvetica", 10)
+    c.drawString(5*mm, 130*mm, f"Nombre: {cliente}")
+    c.drawString(5*mm, 125*mm, f"Cantidad: {cantidad}")
+    c.drawString(5*mm, 120*mm, f"Monto: ${float(monto):.2f}")
+    c.drawString(5*mm, 115*mm, f"Dirección: {direccion}")
+    c.drawString(5*mm, 110*mm, f"Teléfono: {telefono}")
+    c.drawString(5*mm, 105*mm, f"ID Pedido: {id_pedido}")
+
+    # Generar el código QR con el ID del pedido
+    qr = qrcode.QRCode(version=None, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=2, border=1)
+    qr.add_data("Id del pedido: "+ id_pedido)
+    qr.make(fit=True)
+    qr_image = qr.make_image(fill_color="black", back_color="white")
+
+    # Convertir la imagen del código QR a un objeto compatible con ReportLab
+    qr_io = BytesIO()
+    qr_image.save(qr_io, format='PNG')
+    qr_io.seek(0)
+    qr_reportlab = canvas.ImageReader(qr_io)
+
+    # Dibujar el código QR en el ticket
+    c.drawImage(qr_reportlab, 65*mm, 105*mm, width=30*mm, height=30*mm)
+
+    # Dibujar línea separadora
+    c.setLineWidth(0.5)
+    c.line(5*mm, 100*mm, 95*mm, 100*mm)
+
+    # Dibujar mensaje de agradecimiento
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(5*mm, 95*mm, "¡Gracias por su compra!")
+
+    # Guardar el archivo PDF
+    c.showPage()
+    c.save()
+    
+    webbrowser.open("ticket.pdf")
     
     
   rpc.register(
@@ -62,53 +96,41 @@ async def start_rpc():
           "arguments": {
               "id": {
                   "type": "string",
-                  "description": "Id Pedido",
+                  "description": "Your name",
                   "required": True,
                   "array": False,
               },
               
-              "calle":{
+              "domicilio":{
                   "type": "string",
-                  "description": "Calle",
+                  "description": "Your name",
                   "required": True,
                   "array": False,
               },
-              "colonia":{
+              "cantidad":{
                   "type": "string",
-                  "description": "Colonia",
+                  "description": "Your name",
                   "required": True,
                   "array": False,
               },
               "cliente":{
                   "type": "string",
-                  "description": "Cliente",
+                  "description": "Your name",
                   "required": True,
                   "array": False,
               },
               "monto":{
                   "type": "string",
-                  "description": "Monto",
+                  "description": "Your name",
                   "required": True,
                   "array": False,
               },
-              "status":{
+              "telefono":{
                   "type": "string",
-                  "description": "Statusg",
+                  "description": "Your name",
                   "required": True,
                   "array": False,
               },
-              "contacto":{
-                  "type": "string",
-                  "description": "Telefono",
-                  "required": True,
-                  "array": False,
-              },
-              "fecha":{
-                  "type": "string",
-                  "description": "Fecha",
-                  "required": True,
-                  "array": False,
-              }
           },
           "implementation": obtenerDatos,
           "permissions": None,
