@@ -8,6 +8,7 @@ from TicketGenerator import TicketGenerator
 from dotenv import load_dotenv
 
 data = []
+
 load_dotenv()
 
 def process_row(row):
@@ -62,29 +63,36 @@ def process_row(row):
     return row_data
 
 def obtenerRegistros():
+    
+ try:
     # Establecer la conexión a la base de datos
-    db = mysql.connector.connect(
+   # portConect=int(os.getenv("DB_PORT"))
+     db = mysql.connector.connect(
         host=os.getenv("DB_HOST"),
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
         database=os.getenv("DB_NAME"),
-        port=int(os.getenv("DB_PORT"))
-    )
-
-    # Aquí hacemos la consulta y almacenamos el resultado en una variable, se guardan en tuplas
-    cursor = db.cursor()
-    cursor.execute("SELECT o.*, d.* FROM Orders o JOIN Direcciones d ON o.address_id = d.iddireccion;")
-    resultados = cursor.fetchall()
+        port=63306
+     )
+     print (int(os.getenv("DB_PORT")))
+     # Aquí hacemos la consulta y almacenamos el resultado en una variable, se guardan en tuplas
+     cursor = db.cursor()
+     cursor.execute("SELECT o.*, d.* FROM Orders o JOIN Direcciones d ON o.address_id = d.iddireccion;")
+     resultados = cursor.fetchall()
 
     # Cerrar la conexión
-    cursor.close()
-    db.close()
+     cursor.close()
+     db.close()
 
     # Aquí se almacena la información que se transformó de tuplas a array
-    data.clear()
-    for row in resultados:
+     data.clear()
+     for row in resultados:
         row_data = process_row(row)
         data.append(row_data)
+ except Exception as e:
+      print(f"Error: {str(e)}")
+      messagebox.showinfo("Error", str(e))
+     
 
 def imprimir(datos):
     try:
@@ -124,10 +132,14 @@ def actualizar_labels():
         # Label para el cliente
         label_cliente = tk.Label(marco_elemento, text="Cliente: " + str(elemento["nombre"]), font=("Arial", 12, "bold"), width=ancho_fijo, anchor=tk.W)
         label_cliente.grid(row=1, column=0, padx=10, pady=10, sticky=tk.W)
+        
+        # Label para el cliente
+        label_cliente = tk.Label(marco_elemento, text="Monto: " + str(elemento["cantidad"]), font=("Arial", 14, "bold"), width=ancho_fijo, anchor=tk.W)
+        label_cliente.grid(row=2, column=0, padx=10, pady=10, sticky=tk.W)
 
         # Label para la descripción
         label_descripcion = tk.Label(marco_elemento, text=elemento["descripcion"], font=("Arial", 10), width=ancho_fijo, anchor=tk.W)
-        label_descripcion.grid(row=2, column=0, padx=10, pady=10, sticky=tk.W)
+        label_descripcion.grid(row=3, column=0, padx=10, pady=10, sticky=tk.W)
 
         # Botón para cada elemento
         boton_imprimir = tk.Button(marco_elemento, text="Imprimir", command=lambda datos=elemento: imprimir(datos))
@@ -139,7 +151,7 @@ def actualizar_labels():
     canvas.config(scrollregion=canvas.bbox("all"))
 
 ventana = tk.Tk()
-ventana.geometry("700x400")
+ventana.geometry("900x500")
 ventana.title("12Desk")
 
 # Este marco es para meter la scrollbar
