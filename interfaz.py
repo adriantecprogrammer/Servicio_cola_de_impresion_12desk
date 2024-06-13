@@ -6,6 +6,9 @@ import mysql.connector
 from RPCServer import RPCServer
 from TicketGenerator import TicketGenerator
 from dotenv import load_dotenv
+import requests #Este es para jalar la data del endpoint
+import json #este es para manipular el json
+
 
 data = []
 
@@ -63,36 +66,25 @@ def process_row(row):
     return row_data
 
 def obtenerRegistros():
-    
- try:
-    # Establecer la conexión a la base de datos
-   # portConect=int(os.getenv("DB_PORT"))
-     db = mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME"),
-        port=63306
-     )
-     print (int(os.getenv("DB_PORT")))
-     # Aquí hacemos la consulta y almacenamos el resultado en una variable, se guardan en tuplas
-     cursor = db.cursor()
-     cursor.execute("SELECT o.*, d.* FROM Orders o JOIN Direcciones d ON o.address_id = d.iddireccion;")
-     resultados = cursor.fetchall()
 
-    # Cerrar la conexión
-     cursor.close()
-     db.close()
+    try:
+        url = "https://n8nptor10.terio.xyz/webhook/ordersGetByDealerPhone"
+        response = requests.get(url)
 
-    # Aquí se almacena la información que se transformó de tuplas a array
-     data.clear()
-     for row in resultados:
-        row_data = process_row(row)
-        data.append(row_data)
- except Exception as e:
-      print(f"Error: {str(e)}")
-      messagebox.showinfo("Error", str(e))
-     
+        if response.status_code == 200:
+            json_data = response.text
+            array = json.loads(json_data)
+            lista = array['orders']
+            for order in lista:
+                #print(f"ID: {order['id']}, Nombre: {order['nombre']}, Total: {order['total']}")
+                data.append(order)
+            #print("arreglo"+str(data))
+        else:
+            print(f"Error: {response.status_code}")
+        return data
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        messagebox.showinfo("Error", "Error al conectar")
 
 def imprimir(datos):
     try:
@@ -101,7 +93,7 @@ def imprimir(datos):
             id_pedido=str(datos["id"]),
             cliente=str(datos["nombre"]),
             monto=str(datos["total"]),
-            direccion=str(datos["direccion"]) + ", " + str(datos["numero_interior"]),
+            direccion=str(datos["calle"]) + ", " + str(datos["numero_exterior"]),
             colonia=str(datos["colonia"])
             
         )
@@ -118,33 +110,36 @@ def actualizar_labels():
         widget.destroy()
 
     for i, elemento in enumerate(data):
-        # Crear un marco para cada elemento
-        marco_elemento = tk.Frame(marco_lista, bd=1, relief=tk.SOLID)
+        # Crear un marco para cada elemento con fondo #0D1A68
+        marco_elemento = tk.Frame(marco_lista, bd=1, relief=tk.SOLID, bg="#0D1A68")
         marco_elemento.grid(row=i, column=0, padx=30, pady=10, sticky=tk.W + tk.E)
 
         # Ancho fijo para los labels
         ancho_fijo = 50
 
-        # Label para el título
-        label_titulo = tk.Label(marco_elemento, text="ID: " + str(elemento["id"]), font=("Arial", 12, "bold"), width=ancho_fijo, anchor=tk.W)
-        label_titulo.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
+        # Color de fondo para los labels
+        label_bg_color = "#0D1A68"
+        label_fg_color = "white"
 
-        # Label para el cliente
-        label_cliente = tk.Label(marco_elemento, text="Cliente: " + str(elemento["nombre"]), font=("Arial", 12, "bold"), width=ancho_fijo, anchor=tk.W)
+        # Label para el ID
+        label_id = tk.Label(marco_elemento, text="ID: " + str(elemento["id"]), font=("Arial", 12, "bold"), width=ancho_fijo, anchor=tk.W, bg=label_bg_color, fg=label_fg_color)
+        label_id.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
+        
+        # Label para el nombre del cliente
+        label_cliente = tk.Label(marco_elemento, text="Cliente: " + str(elemento["nombre"]), font=("Arial", 10, "bold"), width=ancho_fijo, anchor=tk.W, bg=label_bg_color, fg=label_fg_color)
         label_cliente.grid(row=1, column=0, padx=10, pady=10, sticky=tk.W)
         
-        # Label para el cliente
-        label_cliente = tk.Label(marco_elemento, text="Monto: " + str(elemento["cantidad"]), font=("Arial", 14, "bold"), width=ancho_fijo, anchor=tk.W)
-        label_cliente.grid(row=2, column=0, padx=10, pady=10, sticky=tk.W)
+        # Label para el total
+        label_total = tk.Label(marco_elemento, text="Total: $" + str(elemento["total"]), font=("Arial", 14, "bold"), width=ancho_fijo, anchor=tk.W, bg=label_bg_color, fg=label_fg_color)
+        label_total.grid(row=2, column=0, padx=10, pady=10, sticky=tk.W)
 
         # Label para la descripción
-        label_descripcion = tk.Label(marco_elemento, text=elemento["descripcion"], font=("Arial", 10), width=ancho_fijo, anchor=tk.W)
+        label_descripcion = tk.Label(marco_elemento, text=elemento["referencia"], font=("Arial", 10), width=ancho_fijo, anchor=tk.W, bg=label_bg_color, fg=label_fg_color)
         label_descripcion.grid(row=3, column=0, padx=10, pady=10, sticky=tk.W)
 
         # Botón para cada elemento
-        boton_imprimir = tk.Button(marco_elemento, text="Imprimir", command=lambda datos=elemento: imprimir(datos))
+        boton_imprimir = tk.Button(marco_elemento, text="Imprimir", command=lambda datos=elemento: imprimir(datos), bg="#00CB5C", fg="white", font=("Arial", 12, "bold"), padx=10, pady=5)
         boton_imprimir.grid(row=0, column=1, rowspan=2, padx=10, pady=10)
-        boton_imprimir.config(bg="black", fg="white")
 
     # Actualizar el área de scroll del canvas
     marco_lista.update_idletasks()
@@ -153,12 +148,13 @@ def actualizar_labels():
 ventana = tk.Tk()
 ventana.geometry("900x500")
 ventana.title("12Desk")
+#ventana.iconbitmap("logo.png")
 
 # Este marco es para meter la scrollbar
 marco_principal = tk.Frame(ventana)
 marco_principal.pack(fill=tk.BOTH, expand=1)
 
-# El canvas es donde va ir el frame con toda la info
+# El canvas es donde va a ir el frame con toda la info
 canvas = tk.Canvas(marco_principal)
 canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
 
@@ -173,14 +169,24 @@ canvas.configure(yscrollcommand=scrollbar.set, xscrollcommand=scrollbar.set)
 marco_lista = tk.Frame(canvas)
 canvas.create_window((0, 0), window=marco_lista, anchor=tk.NW)
 
-boton_refresh = tk.Button(ventana, text="Recargar", command=actualizar_labels)
-boton_refresh.pack(side=tk.TOP, anchor=tk.NE, padx=10, pady=10)
+# Cambiar el color de la scrollbar
+style = ttk.Style()
+style.configure("TScrollbar", troughcolor="#00CB5C", background="#00CB5C", arrowcolor="white", bordercolor="#00CB5C")
+
+boton_refresh = tk.Button(ventana, text="Recargar", command=actualizar_labels, bg="#00CB5C", fg="white", font=("Arial", 14, "bold"), padx=8, pady=4)
+boton_refresh.pack(side=tk.TOP, anchor=tk.NE, padx=8, pady=4)
 
 # Función para iniciar el servidor RPC en un hilo separado
 def iniciar_rpc():
+ try:
     rpc_server = RPCServer()
     rpc_thread = threading.Thread(target=rpc_server.run, daemon=True)
     rpc_thread.start()
+ except Exception as e:
+     print(f"Error: {str(e)}")
+     messagebox.showinfo("Error", "Error de conexion") 
+     
+     
 
 # Iniciar el servidor RPC
 iniciar_rpc()
